@@ -1,0 +1,52 @@
+<html>
+<head>
+<title>Set Speed</title>
+</head>
+
+<body>
+
+<h1> Set Speed </h1>
+
+
+
+<h3>Debugging</h3>
+<p id="dump"></p>
+
+
+
+
+<script>
+// Write debug line
+function dwrite(line)
+{
+	var dump = document.getElementById("dump");
+	var text = document.createTextNode (line);
+	var br = document.createElement("br");
+	dump.appendChild(text)
+	dump.appendChild(br)
+}
+
+
+
+var metaurl = "http://127.0.0.1:6878/webUI/set_global_speed_upload@500";
+var httpRequest = null;
+httpRequest = new XMLHttpRequest();
+httpRequest.open("GET", metaurl, false);
+httpRequest.send(null);
+if (httpRequest.status == 200) 
+{
+     dwrite("RESPONSE IS "+ httpRequest.responseText );
+}
+else
+{
+     dwrite("ERROR RESPONSE IS "+ httpRequest.responseText );
+}    
+   
+</script>
+
+
+<hr>
+<address>Meta</address>
+
+</body>
+</html>

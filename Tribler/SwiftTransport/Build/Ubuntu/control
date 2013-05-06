@@ -1,0 +1,16 @@
+Source: swarmplayer
+Section: web
+Priority: optional
+Maintainer: Arno Bakker <arno@cs.vu.nl>
+Build-Depends: debhelper (>= 7.0.50~), mozilla-devscripts (>= 0.19~)
+Standards-Version: 3.8.4
+Homepage: http://swarmplayer.p2p-next.org/
+
+Package: xul-ext-swarmplayer
+Architecture: all
+Depends: ${misc:Depends}
+Recommends: ${xpi:Recommends}
+Provides: ${xpi:Provides}
+Enhances: ${xpi:Enhances}
+Description: Adds the P2P-based tswift:// transfer protocol to Firefox, which enables the use of tswift URLs inside e.g. the video tag.
+ .

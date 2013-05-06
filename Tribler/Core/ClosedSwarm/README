@@ -1,0 +1,260 @@
+
+
+                      The Enhanced Closed Swarms protocol
+
+
+The Enhanced Closed Swarms (ECS) protocol extends the Closed Swarms (CS) with 
+several enhancements, which provide additional flexibility in access control 
+mechanism, enabling fine grained security policies specification and 
+enforcement. In particular these enhancements provide:
+	- Creation and maintenance of a hierarchically structured swarm
+	- Restriction of the content delivery based on peer location 
+	- Provision of different content quality in the same swarm
+	- Temporal constraints
+	- Resistance of the protocol to man-in-the-middle attacks
+	- Means for backward compatibility
+	
+As opposed to the CS protocol, the positive outcome of the ECS protocol is 
+only one way upload, from peer B (closed swarm member) to peer A (initiator). 
+If peer B is also interested in receiving content, it needs to initiate this 
+protocol again. For detailed explanation of: the format of the authorization 
+credential, the format of the exchanged messages, the message exchange process 
+and the grammar for rules definition, please refer to the following paper:
+
+JOVANOVIKJ, Vladimir, GABRIJELCIC, Dusan, KLOBUCAR, Tomaz. Access control in 
+BitTorrent P2P networks uisng the enhanced closed swarms protocol. V: Netware 
+2011 : August 21-27, 2011, French Riviera, Nice - Saint Laurent du Var, France. 
+[S. l.]: IARIA, cop. 2011, str. 97-102. [COBISS.SI-ID 24977959] 
+
+
+Table of Contents:
+
+    1 Implementation content
+    2 Installation
+    3 Implementation
+    4 Integration in the Next-Share platform
+    5 Bugs
+    6 Using ECS protocol for creation and maintenance of a hierarchically 
+      structured swarm
+    
+
+1 Implementation content
+
+The content of the ECS protocol Python implementation is lay out as follows:
+	- Implementation:
+		+ Tribler/Core/ClosedSwarm/ECS_ClosedSwarms.py
+		+ Tribler/Core/ClosedSwarm/ECS_AuthorizationEngine.py
+		+ Tribler/Core/ClosedSwarm/ECS_Exceptions.py
+	- Configuration:
+		+ Tribler/Core/ClosedSwarm/conf/EnhancedClosedSwarmSettings.py
+	- Test:
+		+ Tribler/Core/ClosedSwarm/test/test_closedswarm_lowlevel.py
+		+ Tribler/Core/ClosedSwarm/test/test_closedswarm_hilevel.py
+	- Tools:
+
+
+2 Installation
+
+Add implementation content in the directory: /Tribler/Core/ClosedSwarm.
+
+Additional libraries should be installed for GEOIP to work:
+1. python-geoip
+2. geoip-database (for countries)
+The database file should be placed in /Tribler/Core/ClosedSwarm/conf and
+the appropriate configuration variable for this file's path should be 
+set in EnhancedClosedSwarmSettings.py.
+
+
+3 Implementation
+
+The ECS protocol implementation is based on the CS protocol implementation.
+The contained classes are described below. For detailed description of methods, 
+parameters and results please refer to standard Python documentation in the 
+code.
+
+ECS_ClosedSwarms.py module contains classes related to the authorization 
+credential, the message exchange process of the ECS protocol, and the management 
+of the ECS protocol for one and several closed swarms.
+
+	- EPOA implements the functionality related to the authorization credential.
+	It inherits the POA class from the CS protocol implementation and extends 
+	its functionality to support the additional Rules field. The main 
+	differences from the parent class is that expire_time attribute is of type 
+	Integer as opposed to type Float in POA class. This is due to an existing 
+	bug in the CS implementation: the expire time is not included into the 
+	signature. In order to fix this, we need to be able to bencode the expire 
+	time. Since Float type cannot be bencoded, we changed the expire time type 
+	to Integer.
+	
+	- EnhancedClosedSwarm implements the functionality related to message 
+	exchange process, such as message creation and verification. It inherits 
+	the interfaces from the ClosedSwarm class from the CS implementation. 
+	However, methods are appropriately modified to handle the different format 
+	of the messages and the additional message type. Furthermore, an additional 
+	functionality is added to generate a key for the encryption/decryption of 
+	the content exchanged after the ECS protocol. The key is derived from a 
+	shared secret between the two peers according to the Elliptic Curve Diffie-
+	Hellman (ECDH) protocol.
+	
+	- ECS_Connection implements the functionality for coordination of the 
+	message exchange process. In CS protocol implementation most of this is 
+	done in the Tribler/Core/BitTornado/BT1/Connecter.py module. Furthermore, 
+	an additional functionality is added to schedule next 
+	verification/evaluation of a request for service or a POA. In this way 
+	upload will be disabled to: i) a peer with a request no longer according to 
+	authorizations, and ii) a peer with expired POA. The letter case fixes an 
+	existing bug in the CS implementation: the upload to a peer does not stop 
+	if its credential expires during the uploading process.
+	
+	- ECS_SwarmManager implements the functionality for management of all ECS
+	connections a node makes for a single closed swarm, such as keeping track 
+	of current connections, limiting the number of upload connections and 
+	priority aware peer selection for the peer discovery mechanism. Similar 
+	class is not found in the CS protocol implementation.
+	
+	- ECS_Manager is a singleton class that implements the functionality for 
+	management of all ECS Swarm Managers. It also keeps a reference for the 
+	single ECS_Authorization object initialized, through which this object is 
+	called by the all ECS_Connection and EnhancedClosedSwarm objects. Similar 
+	class is not found in the CS protocol implementation.
+
+ECS_AuthorizationEngine.py module contains classes for interpreting and 
+evaluation of the expressive and flexible access control policies supported by 
+the ECS protocol.
+
+	- ECS_Lexer and ECS_Parser classes implement a lexer and a parser 	
+	according to the ECS specific grammar. They parse and evaluate the Rules 
+	field and extract specific variable names and values from Rules and 
+	ReqService fields. Most of the methods in these classes are written 
+	according to the specifications for the yacc.py module. For detailed 
+	explanation of their meaning and role please refer to PLY(Python Lex-
+	Yacc) documentation	(www.dabeaz.com/ply/ply.html)
+	
+	- Rules class is an ECS_Parser wrapper, bounded to a single Rules field 
+	content. 
+
+	- Authorization_Engine is a class responsible for coordination of the 
+	process of evaluation of the Rules field contents originating from 
+	credentials valid for different swarms. It keeps track of the specific 
+	environment in which each rules have to be evaluated, and switches and 
+	updates it before each evaluation. 
+	
+	
+4 Integration in the Next-Share platform
+
+The ECS protocol is integrate in the Next-Share platform as follows:
+
+    - In /Tribler/Core/APIImplementation/LaunchManyCore.py module
+        + The ECS_Manager singleton object is initialized by the 
+        TriblerLaunchMany object when registering a session.
+        + ECS_Manager registers a torrent, when it is added into the 
+        TriblerLaunchMany object.
+        
+    - In /Tribler/Core/DownloadConfig.py module
+        Setters and getters for POA, ReqService and maximum ECS peers are put in 
+        the DownloadConfigInterface class.
+        
+    - In /Tribler/Core/BitTornado/BT1/Connecter.py module
+        + POA, ReqService, max number of peers supporting ECS, and a scheduler 
+        function are set to the responsible ECS_SwarmMember object upon 
+        initializatoin of a Connecter object. At the same time, a distinction 
+        between the two versions of the CS protocol is made based on the number 
+        of fields in the POA set. 
+        + New attribute called ecsconnection is added in the Connection class, 
+        which refers to an accompanied ECS_Connection object to the objects of 
+        this class. Also a setter method for this attribute is added.
+        + A Connection object is registered by the responsible ECS_SwarmManager 
+        when an extension protocol handshake is received. If this Connection 
+        object was locally initiated, the ECS protocol is started here. 
+        + If a Connection object is not locally initiated, the ECS protocol is 
+        initiated only if the peer is interested in downloading content pieces. 
+        The protocol is initiated just before sending the Interested message.
+        + The incoming CS message are redirected to ECS_Connection object where 
+        it is processed. This is done by the got_cs_message() method from 
+        Connection class, which also takes the appropriate actions on the 
+        received response.
+        + The close() method from the Connection class is extended to unregister 
+        a connection object from the ECS_SwarmManager.
+        + The content pieces are encrypted before sending and decrypted after 
+        receiving with the exchanged key and IV.
+    
+    - In /Tribler/Core/BitTornado/BT1/MessageID.py module
+        + Added message ID for the additional message
+
+    - In Tribler/Core/ClosedSwarm/ClosedSwarm.py module
+        + Using 'isinstance()' instead of '__class__ ==' 
+
+        
+5 Bugs
+
+During the implementation and integration process, the following bugs were 
+detected and fixed:
+
+    - In Tribler/Core/ClosedSwarm/ClosedSwarm.py module
+        + The expire time from the POA credential is not included into the 
+        signature.
+        + Upload to a peer does not stop if its credential expires during the 
+        uploading process.
+        
+    - In /Tribler/Core/BitTornado/BT1/Connecter.py module
+        + A Connection object is not closed after it is lost (connection_lost() 
+        method from the Connecter class)
+
+
+6 Using ECS protocol for creation and maintenance of a hierarchically structured 
+swarm
+
+A hierarchically structured swarm promises means for load balancing and 
+optimization of the delivery process, especially in case of live streaming 
+content. In BitTorrent live streaming swarm, seeds are special peers with 
+outstanding properties (e.g., high bandwidth), which are always unchoked by the 
+content injector, and are often purposely set by the content provider to improve 
+the other peer's (leeches) download performance. Thus, they are called auxiliary 
+seeds.
+
+The hierarchical structure is formed by separation of the seeds into layers 
+(levels) according to the priority assigned to them by the content provider.
+The greater the priority of the seeds a layer contains is - the higher it 
+appears in the structure. The leechs are placed in the most outer layer and 
+do not have any priority. The value of the priority defines the level of 
+precedence a seed has among the other peers in the live streaming swarm (seeds 
+and leeches). Normally, the content injector and the seeds establish a 
+connection to any peer in the swarm regardless of its priority, as long as they 
+have a free connection. However, when a lack of free connection occurs, the 
+connections with seeds having lower priorities or with leeches will be 
+terminated in favour of seeds having greater priorities.
+
+Two mechanisms are needed for the process of creation and maintenance 
+of the hierarchical structure:
+	- Automatic introduction of seeds: Seeds explicitly know each other by 
+	maintaining lists of their identifiers (e.g., IP address and port number). 
+	However, these lists are maintained manually - something that becomes 
+	impractical for a large swarm and very difficult for creation and 
+	maintenance of a hierarchical structure. 
+	- Suitable peer discovery: This mechanism is needed to enable creation and 
+	maintenance of the hierarchical structure.
+
+ECS protocol provides these mechanisms by:
+	- supporting expressive and flexible access control policies (Rules field)
+	- enabling peers to exchange swarm members between themselves (Peers field)
+
+During the design of the hierarchical structure, the content provider decides 
+about the number of the needed seeds and the number of the layers of the 
+structure. Then it assigns the seeds to specific layer, according to their 
+capabilities (e.g., bandwidth) and issues them appropriate credentials, 
+specifying their priority in the policy.
+
+The process of creation goes as follows. All peers first need to contact the 
+tracker to discover other members of the closed swarm. Then they initiate the 
+peer wire protocol to the returned swarm members. The ECS protocol start after 
+the Extension protocol handshake. With the ECS protocol peers exchange list of 
+other swarm members, sorted by their priority. One half of the peers in the list 
+is selected from their download connections, while the other half from their 
+upload connections. In this way, peers are able to move up and down in the 
+hierarchical structure, until they fit in the appropriate level according to 
+their priority.
+
+As the content provider only needs to issue appropriate credential in order to 
+create the hierarchically structured swarm, it can easily maintain it for 
+example if some of the seeds is down. Moreover, it can even reorganize it on the 
+fly.

@@ -1,0 +1,227 @@
+<html>
+<head><title>NSSA Advanced Search Page</title>
+
+<script type="text/javascript">
+
+// IE does not support the trim() function, add it manually
+if (typeof String.prototype.trim !== 'function') {
+  String.prototype.trim = function() {
+    return this.replace(/^\s+|\s+$/g, '');
+  }
+}
+
+function getArrayFromCSVString(csvstring) {
+  var elemArr = csvstring.split(",");
+  var cleanElemArr = new Array();
+  for (var i=0; i<elemArr.length; i++) {
+    var elem = elemArr[i].trim();
+    if (elem.length > 0)
+      cleanElemArr.push(elem);
+  }
+  return cleanElemArr;
+}
+
+function isNumber(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+
+function validatesearchform() {
+  var form = document.forms.searchform;
+  var elements = form.elements;
+  var queryField = elements["q"];
+  var titleQuery = "";
+  var genreQuery = "";
+  var languageQuery = "";
+  var resolutionQuery = "";
+  var productionyearQuery = "";
+  var queryArr = new Array();
+  var txtExactTitle = elements["exactTitle"].value.trim();
+  var txtWordsTitle = elements["wordsTitle"].value.trim();
+  var txtGenres = elements["genres"].value.trim();
+  var txtLanguages = elements["languages"].value.trim();
+  var txtMaximumAge = elements["maximumage"].selectedIndex;
+  var txtResolution = elements["resolution"].options[elements["resolution"].selectedIndex].value;
+  var txtProductionYear = elements["productionyear"].value.trim();
+ 
+  if (txtExactTitle.length > 0) {
+    titleQuery = "title="+txtExactTitle;
+  }
+  else if (txtWordsTitle.length > 0) {
+    var wordsArr = getArrayFromCSVString(txtWordsTitle);
+    for (var i=0; i<wordsArr.length; i++) {
+      var word = wordsArr[i].trim();
+      if (i==0)
+	titleQuery = "(title~"+word
+      else
+	titleQuery = titleQuery +"||title~"+word
+      if (i==wordsArr.length-1)
+	titleQuery = titleQuery +")";
+    }
+  }
+  //queryField.value=titleQuery;
+  queryArr.push(titleQuery);
+  
+  var genresArr = getArrayFromCSVString(txtGenres);
+  for (var i=0; i<genresArr.length; i++) {
+    var genre = genresArr[i];
+    if (i == 0)
+      genreQuery = "(genre="+genre;
+    else
+      genreQuery = genreQuery +"||genre="+genre
+    if (i == genresArr.length-1)
+      genreQuery = genreQuery+")" 
+  }
+  //queryField.value= queryField.value +genreQuery;
+  queryArr.push(genreQuery);
+  
+  var langArr = getArrayFromCSVString(txtLanguages);
+  for (var i=0; i<langArr.length; i++) {
+    var lang = langArr[i];
+    if (i == 0)
+      languageQuery = "(language="+lang;
+    else
+      languageQuery = languageQuery +"||language="+lang
+    if (i == langArr.length-1)
+      languageQuery = languageQuery+")" 
+  }
+  
+  //queryField.value= queryField.value +languageQuery;
+  queryArr.push(languageQuery);
+  
+  if (txtProductionYear.length > 0 && isNumber(txtProductionYear)) {
+    year = parseInt(txtProductionYear)
+    maxyear = new Date().getFullYear();
+    minyear = 1900
+    if (year >= 1900 && year <= maxyear) {
+      productionyearQuery = "(productiondate>="+year +"-01-01" +"&&productiondate<="+year +"-12-31)"
+      
+    }
+  }
+  
+  queryArr.push(productionyearQuery)
+  
+  if (txtMaximumAge > 0)
+    queryField.value= queryField.value +"(age<="+txtMaximumAge +")";
+  
+  if (isNumber(txtResolution))
+    resolutionQuery = "(height>=" +txtResolution +")";
+ 
+  //queryField.value= queryField.value +resolutionQuery;
+  queryArr.push(resolutionQuery);
+  
+  for (var i=0; i<queryArr.length; i++) {
+    if (queryArr[i].trim().length > 0) {
+      if (queryField.value.length == 0)
+        queryField.value = queryArr[i];
+      else
+	queryField.value = queryField.value +"&&" +queryArr[i];
+    }
+  }
+  if (queryField.value.length == 0)
+    alert("Please enter a valid query!");
+  else 
+    form.submit();
+  return true;
+}
+</script>
+<noscript>Please enable JavaScript to use this page!</noscript>
+</head>
+<body>
+<h1><img src="p2p-next_small.png"/>NSSA Advanced Search page</h1>
+<link rel="search" type="application/opensearchdescription+xml" href="http://127.0.0.1:6878/search/opensearch.xml" title="P2P-next Search" />
+<form method="get" name="searchform" action="http://127.0.0.1:6878/search">
+<table name="formtable">
+<tr>
+<td><b>Title:</b></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td> exact Phrase </td>
+<td><input id="exactTitle" value=""></td>
+<td><input type="submit" value="NSSA Search" onclick="validatesearchform();return false;"/></td>
+</tr>
+<tr>
+<td></td>
+<td> containing the word </td>
+<td><input id="wordsTitle" value=""></td>
+</tr>
+<tr>
+<td><b>Genre:</b></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>one of</td>
+<td><input id="genres" value=""></td>
+<td>Note: separate genres by comma, e.g., Action, Science Fiction</td>
+</tr>
+<tr>
+<td><b>Language:</b></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td> one of</td>
+<td><input id="languages" value=""></td>
+<td>Note: use a comma separated list of language short codes, e.g., en,fr,de</td>
+</tr>
+<tr>
+<td><b>Production year:</b></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td> </td>
+<td><input id="productionyear" value=""></td>
+<td>Note: year in format YYYY</td>
+<tr>
+<td><b>Age-appropriate:</b></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>rated as suitable for </td>
+<td><select id="maximumage">
+<script>
+for (var i=0;i<=18;i++){
+if (i==0)
+document.write('<option selected value="">All</option>');
+else
+document.write('<option value="'+i+'">' +i +'</option>');
+}
+</script>
+</select>
+</td>
+<td> Note: movies with higher age ratings are excluded from the search
+</tr>
+<tr>
+<td><b>Screen Resolution:</b></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td> only high definition? </td>
+<td><select id="resolution">
+<option selected value="all">No, all resolutions</option>
+<option value="720">Yes, 720 and higher</option>
+<option value="1080">Yes, 1080 and higher</option>
+</select>
+</td>
+<td></td>
+</tr>
+</table>
+<input type="hidden" name="q" value="" />
+<input type="hidden" name="advq" value="on"/>
+<input type="hidden" name="collection" value="buddycast"/>
+<td><input type="submit" value="NSSA Search" onclick="validatesearchform();return false;"/></td>
+</form>
+</body>
+</html>

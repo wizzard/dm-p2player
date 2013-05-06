@@ -1,0 +1,18 @@
+content     tribe chrome/content/
+skin        tribe wiki skin/wiki/
+
+# Firefox
+#overlay	chrome://browser/content/browser.xul chrome://tribe/content/tribe_status_bar.xul
+
+interfaces components/tribeISwarmTransport.xpt
+component {3dfea7b2-52e6-467f-b2c6-19fd6d4596bf} components/SwarmTransport.js
+contract @p2pnext.org/tribe/swarmTransport;1 {3dfea7b2-52e6-467f-b2c6-19fd6d4596bf}
+category JavaScript-global-constructor swarmTransport @p2pnext.org/tribe/swarmTransport;1
+
+interfaces components/tribeIChannel.xpt
+component {68bfe8e9-c7ec-477d-a26c-2391333a7a24} components/TribeChannel.js
+contract @p2pnext.org/tribe/channel;1 {68bfe8e9-c7ec-477d-a26c-2391333a7a24}
+
+component {bcb8d306-66cf-4358-8473-807981ffe365} components/TribeProtocolHandler.js
+contract @mozilla.org/network/protocol;1?name=tribe {bcb8d306-66cf-4358-8473-807981ffe365}
+

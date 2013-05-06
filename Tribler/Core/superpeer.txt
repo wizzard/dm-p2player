@@ -1,0 +1,3 @@
+#ip, port, permid, [name]
+nextshare-superpeer.lancs.ac.uk, 7001, MFIwEAYHKoZIzj0CAQYFK4EEABoDPgAEAB+o6/XnRxspVSc5rjBjR4ja2Rk6bQuP0j5oqK26ARAdN1uLiyyJOKYBIdqcZbli0d+xVLbJu+j85QmW, ULANCSuperPeer@P2P-Next
+testsuperpeer1.p2p-next.org, 17001, MFIwEAYHKoZIzj0CAQYFK4EEABoDPgAEAMze7nrfB65/xP7OKsWbvDJ1xo0L+wjtCYPMgFhZAQEA8CeFLyglzpI89Nlk70CytIbEBJJD8QzqjjgB, TestSuperPeer1@P2P-Next

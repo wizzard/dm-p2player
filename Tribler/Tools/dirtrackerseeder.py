@@ -74,9 +74,9 @@ def state_callback(ds):
 
     return (1.0, False)
 
-def main():
+def main(argv):
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hvp:", ["help", "version", "port", "seeder", "buddycast", "peerassist", "installdir="] )
+        opts, args = getopt.getopt(argv, "hvp:", ["--help=", "version", "port=", "seeder", "buddycast", "peerassist", "installdir="] )
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -242,4 +242,4 @@ def main():
         print_exc()
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

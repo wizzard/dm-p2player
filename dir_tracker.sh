@@ -13,6 +13,6 @@ export PYTHONPATH=.
 TRACKER_PORT=6969
 
 echo "Starting Tracker server .."
-python Tribler/Tools/dirtrackerseeder.py --port $TRACKER_PORT $1
+python Tribler/Tools/dirtrackerseeder.py --port $TRACKER_PORT $1 &
 echo "Started!"
 

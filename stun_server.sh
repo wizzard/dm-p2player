@@ -9,9 +9,9 @@ PING_PORT=3479
 STUN_IP="0.0.0.0"
 
 echo "Starting STUN server .."
-python Tribler/Tools/stunserver.py $STUN_PORT $STUN_IP $STUN_PORT  
+python Tribler/Tools/stunserver.py $STUN_PORT $STUN_IP $STUN_PORT &
 echo "Started!"
 
 echo "Starting PingBack server .."
-python Tribler/Tools/pingbackserver.py $PING_PORT 
+python Tribler/Tools/pingbackserver.py $PING_PORT &
 echo "Started!"
